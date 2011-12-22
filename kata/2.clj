@@ -12,11 +12,12 @@
   (letfn [(get-mid [bot top] (+ bot (Math/floor (/ (- top bot) 2))))]
     (loop [first 0
            last (- (count haystack) 1)]
-      (when (<= last first)
-        (let [mid (get-mid first last)]
-          (cond (== needle (nth haystack mid)) mid
-                (> needle (nth haystack mid)) (recur (+ mid 1) last)
-                :else (recur first (- mid 1))))))))
+      (if (> first last) 
+          -1
+          (let [mid (get-mid first last)]
+            (cond (== needle (nth haystack mid)) mid
+                  (> needle (nth haystack mid)) (recur (+ mid 1) last)
+                  :else (recur first (- mid 1))))))))
 
 (defn search-slice [needle haystack]
   (letfn [(search [offset haystack]
@@ -56,7 +57,7 @@
 ))
 
 (test-search "Recursive search" search-rec)
-;; (test-search "Loop search" search-loop)
+(test-search "Loop search" search-loop)
 (test-search "Recursive slice search" search-slice)
 
 
