@@ -9,11 +9,8 @@
         max #(Integer/parseInt (subs % 6 8))
         min #(Integer/parseInt (subs % 12 14))
         rows (take 30 (drop 2 (get-table-rows)))]
-    (day (reduce (fn [row1 row2]
-                   (let [spread1 (- (max row1) (min row1))
-                         spread2 (- (max row2) (min row2))]
-                     (if (< spread1 spread2) row1 row2)))
-                 rows))))
+    (first (reduce (fn [row1 row2] (if (< (second row1) (second row2)) row1 row2)) 
+                   (map (fn [r] [(day r) (- (max r) (min r))]) rows)))))
 
 (print "Calmest day is: ")
 (println (calmest-day))
