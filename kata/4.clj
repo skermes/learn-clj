@@ -1,25 +1,30 @@
 (require '[clojure.string :as string])
 
-(defn get-table-rows [file header-size]
+(defn get-table-rows [file prelude-size header-rows data-rows]
   (let [data (slurp file)]
-    (filter #(not (string/blank? (string/trim (string/replace % "-" ""))))
-            (string/split-lines (subs data header-size (- (count data) 8))))))
+    (take data-rows 
+      (drop header-rows
+        (filter #(not (string/blank? (string/trim (string/replace % "-" ""))))
+                (string/split-lines (subs data prelude-size (- (count data) 8))))))))
+
+(defn key-with-smallest-spread [key-cols front-cols back-cols rows]
+  (let [key #(string/trim (subs % (first key-cols) (second key-cols)))
+        front #(Integer/parseInt (subs % (first front-cols) (second front-cols)))
+        back #(Integer/parseInt (subs % (first back-cols) (second back-cols)))]
+    (first (reduce (fn [row1 row2] (if (< (second row1) (second row2)) row1 row2))
+                   (map (fn [r] [(key r) (Math/abs (- (front r) (back r)))]) rows)))))
 
 (defn calmest-day []
-  (let [day #(string/trim (subs % 2 4))
-        max #(Integer/parseInt (subs % 6 8))
-        min #(Integer/parseInt (subs % 12 14))
-        rows (take 30 (drop 2 (get-table-rows "kata/weather.dat" 162)))]
-    (first (reduce (fn [row1 row2] (if (< (second row1) (second row2)) row1 row2)) 
-                   (map (fn [r] [(day r) (- (max r) (min r))]) rows)))))
+  (key-with-smallest-spread [2 4]
+                            [6 8]
+                            [12 14]
+                            (get-table-rows "kata/weather.dat" 162 2 30)))
 
 (defn evenest-team []
-  (let [name #(string/trim (subs % 7 20))
-        for #(Integer/parseInt (subs % 43 45))
-        against #(Integer/parseInt (subs % 50 52))
-        rows (take 21 (drop 1 (get-table-rows "kata/football.dat" 171)))]
-    (first (reduce (fn [row1 row2] (if (< (second row1) (second row2)) row1 row2))
-                   (map (fn [r] [(name r) (Math/abs (- (for r) (against r)))]) rows)))))
+  (key-with-smallest-spread [7 20]
+                            [43 45]
+                            [50 52]
+                            (get-table-rows "kata/football.dat" 171 1 21)))
 
 (print "Calmest day is: ")
 (println (calmest-day))
