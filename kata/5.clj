@@ -1,4 +1,5 @@
-(require '[clojure.java.io :as io])
+(require '[clojure.java.io :as io]
+         '[clojure.string :as string])
 (import 'java.security.MessageDigest)
 
 (defn all [terms]
@@ -51,20 +52,27 @@
   (with-open [file (io/reader "/usr/share/dict/words")]
     (fill-bloom hasher (line-seq file))))
 
-(defn test-word [checker word]
-  (do (print word)
-      (print " is")
-      (print (if (checker word) "" " not"))
-      (println " a word.")))
+(defn random-word [len]
+  (let [letters "abcdefghijklmnopqrstuvwxyz"]
+    (string/join (map (fn [x] (rand-nth letters)) (range len)))))
 
-(let [hasher (partial get-hashes "MD5" 3 19)
-      is-a-word (partial bloom-contains-word (spellchecker hasher) hasher)]
-  (do (test-word is-a-word "spoon")
-      (test-word is-a-word "enunciate")
-      (test-word is-a-word "sporn")
-      (test-word is-a-word "spooon")
-      (test-word is-a-word "perambulate")
-      (test-word is-a-word "aisle")
-      (test-word is-a-word "zephyr")
-      (test-word is-a-word "neph")))
+(defn get-results [is-a-word]
+  (reduce (fn [results word] (if (is-a-word word)
+                                 (assoc results :words (conj (results :words) word))
+                                 (assoc results :failcount (+ 1 (results :failcount)))))
+          (hash-map :words [] :failcount 0)
+          (map (fn [x] (random-word 5)) (range 100))))
+
+(defn test-hasher [strategy n-hashes hash-len]
+  (do (println "Time for testing" n-hashes hash-len "-bit hashes from" strategy)
+      (let [results (time (let [hasher (partial get-hashes strategy n-hashes hash-len)
+                                is-a-word (partial bloom-contains-word (spellchecker hasher) hasher)]
+                            (get-results is-a-word)))]
+        (println "Accuracy:" (results :failcount) "out of 100."))
+      (println)))
+
+(doseq [n-hashes [3 4]
+        hash-len [19 20 21 22]
+        strategy ["MD5" "SHA1"]]
+  (test-hasher strategy n-hashes hash-len))
 
