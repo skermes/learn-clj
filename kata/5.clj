@@ -33,38 +33,46 @@
   (let [full-hash (.digest (MessageDigest/getInstance strategy) (.getBytes text))]
     (map bits-to-num (take n-hashes (partition hash-len (flatten (map byte-to-bits full-hash)))))))
 
-(defn bloom-new [] #{})
+(defn vector-of-zeros [len]
+  (reduce (fn [coll i] (conj coll 0)) [] (range len)))
 
-(defn bloom-add [bloom hashes]
-  (reduce (fn [blm hash] (conj blm hash)) bloom hashes))
+(defn bloom-new [strategy n-hashes hash-len]
+  (hash-map :hasher (partial get-hashes strategy n-hashes hash-len)
+            :filter (vector-of-zeros (pow 2 (max (- hash-len 5) 1))))) ;; Assume 32-bit ints
+
+(defn bloom-add [bloom word]
+  (let [hashes ((bloom :hasher) word)]
+    (hash-map :hasher (bloom :hasher)
+              :filter (reduce (fn [filter hash]
+                                (let [replace-idx (long (/ hash 32))
+                                      replace-bit (- hash (* replace-idx 32))]
+                                  (assoc filter replace-idx (bit-or (nth filter replace-idx) (pow 2 replace-bit)))))
+                              (bloom :filter)
+                              hashes))))
  
-(defn bloom-contains [bloom hashes]
-  (all (map (fn [hash] (bloom hash)) hashes)))
+(defn bloom-contains [bloom word]
+  (let [hashes ((bloom :hasher) word)
+        target-int (fn [hash] (long (/ hash 32)))
+        target-bit (fn [hash] (- hash (* (target-int hash) 32)))]
+    (all (map (fn [hash] (< 0 (bit-and (nth (bloom :filter) (target-int hash)) (pow 2 (target-bit hash))))) hashes))))
 
-(defn bloom-contains-word [bloom hasher word]
-  (bloom-contains bloom (hasher word)))
+(defn bloom-fill [bloom words]
+  (reduce (fn [blm word] (bloom-add blm word)) bloom words))
 
-(defn fill-bloom [hasher words]
-  (reduce (fn [blm word] (bloom-add blm (hasher word))) (bloom-new) words))
-
-(defn spellchecker [hasher]
+(defn spellchecker [strategy n-hashes hash-len]
   (with-open [file (io/reader "/usr/share/dict/words")]
-    (fill-bloom hasher (line-seq file))))
+    (bloom-fill (bloom-new strategy n-hashes hash-len) (line-seq file))))
 
-(defn test-word [checker word]
-  (do (print word)
-      (print " is")
-      (print (if (checker word) "" " not"))
-      (println " a word.")))
 
-(let [hasher (partial get-hashes "MD5" 3 19)
-      is-a-word (partial bloom-contains-word (spellchecker hasher) hasher)]
-  (do (test-word is-a-word "spoon")
-      (test-word is-a-word "enunciate")
-      (test-word is-a-word "sporn")
-      (test-word is-a-word "spooon")
-      (test-word is-a-word "perambulate")
-      (test-word is-a-word "aisle")
-      (test-word is-a-word "zephyr")
-      (test-word is-a-word "neph")))
+(let [checker (spellchecker "MD5" 3 19)
+      test-word (fn [word]
+                  (do (print word)
+                      (print " is")
+                      (print (if (bloom-contains checker word) "" " not"))
+                      (println " a word.")))]
+  (do (test-word "Aaron")
+      (test-word "Aarons")
+      (test-word "Aaron's")
+      (test-word "Aaaron")
+      (test-word "Aaroon")))
 
