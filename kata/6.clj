@@ -1,13 +1,14 @@
 (require '[clojure.string :as string]
          '[clojure.java.io :as io])
 
-(defn decorate [words]
-  (map (fn [word] (hash-map :key (string/join "" (sort word)) :val word)) words))
-
 (defn anagram-map [words]
-  (reduce (fn [anagrams decorated] (assoc anagrams (decorated :key) (conj (get anagrams (decorated :key) []) (decorated :val))))
-          (hash-map)
-          (decorate words)))
+  (let [key (fn [word] (string/join "" (sort word)))]
+    (reduce (fn [anagrams word] 
+              (assoc anagrams 
+                     (key word) 
+                     (conj (get anagrams (key word) []) word)))
+            (hash-map)
+            words)))
 
 (defn anagrams [words]
   (filter #(> (count %) 1) (vals (anagram-map words))))
