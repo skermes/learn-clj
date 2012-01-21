@@ -23,5 +23,17 @@
   (with-open [wordlist (io/reader "/usr/share/dict/words")]
     (print-anagrams (line-seq wordlist))))
 
-(run-on-all-words)
+;; (run-on-all-words)
+
+;; TESTING ----------------------------------------------
+(require 'clojure.test)
+
+(clojure.test/are [agrams words] (= agrams (set (anagrams words)))
+                  #{} []
+                  #{} ["a"]
+                  #{} ["a" "b" "c"]
+                  #{["aab" "aba"]} ["aab" "aba"]
+                  #{["aab" "aba"]} ["c" "aab" "d" "aba"]
+                  #{["aab" "aba"] ["cde" "ecd" "dce"]} ["aab" "cde" "ecd" "aba" "dce"])
+
 
