@@ -13,18 +13,29 @@
 (defn anagrams [words]
   (filter #(> (count %) 1) (vals (anagram-map words))))
 
+(defn statistics [agrams]
+  (let [longer (fn [gram1 gram2] (if (> (count (first gram1)) (count (first gram2))) gram1 gram2))
+        more (fn [gram1 gram2] (if (> (count gram1) (count gram2)) gram1 gram2))]
+    (reduce (fn [result agram] (assoc result :longest (longer (result :longest) agram)
+                                             :most (more (result :most) agram)))
+            (hash-map :longest [""]
+                      :most [])
+            agrams)))
+
 (defn print-anagrams [words]
-  (let [anagram-groups (anagrams words)]
-    (do (println "Total anagram tuples:" (count anagram-groups))
-        (doseq [anagram anagram-groups]
+  (let [anagram-groups (anagrams words)
+        stats (statistics anagram-groups)]
+    (do (doseq [anagram anagram-groups]
           (println (string/join " " anagram)))
-        (println "Total anagram tuples:" (count anagram-groups)))))
+        (println "Total anagram tuples:" (count anagram-groups))
+        (println "Longest anagram word:" (stats :longest))
+        (println "Most anagram words:" (stats :most)))))
 
 (defn run-on-all-words []
   (with-open [wordlist (io/reader "/usr/share/dict/words")]
     (print-anagrams (line-seq wordlist))))
 
-;; (run-on-all-words)
+(run-on-all-words)
 
 ;; TESTING ----------------------------------------------
 (require 'clojure.test)
