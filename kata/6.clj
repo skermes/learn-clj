@@ -2,7 +2,7 @@
          '[clojure.java.io :as io])
 
 (defn anagram-map [words]
-  (let [key (fn [word] (string/join "" (sort word)))]
+  (let [key (fn [word] (string/join "" (sort (string/lower-case word))))]
     (reduce (fn [anagrams word] 
               (assoc anagrams 
                      (key word) 
