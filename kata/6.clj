@@ -4,9 +4,6 @@
 ;; http://clojuredocs.org/clojure_core/clojure.core/contains_q
 (defn valid-word [word] (= word (string/replace word #"[']" "")))
 
-(defn uniq [lst] 
-  (seq (reduce (fn [result next] (if (result next) result (conj result next))) #{} lst)))
-
 (defn anagram-map [words]
   (let [key (fn [word] (string/join "" (sort word)))]
     (reduce (fn [anagrams word] 
@@ -39,7 +36,7 @@
 
 (defn run-on-all-words []
   (with-open [wordlist (io/reader "/usr/share/dict/words")]
-    (print-anagrams (uniq (map string/lower-case (filter valid-word (line-seq wordlist)))))))
+    (print-anagrams (set (map string/lower-case (filter valid-word (line-seq wordlist)))))))
 
 (run-on-all-words)
 
