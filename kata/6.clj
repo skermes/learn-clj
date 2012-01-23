@@ -1,6 +1,9 @@
 (require '[clojure.string :as string]
          '[clojure.java.io :as io])
 
+;; http://clojuredocs.org/clojure_core/clojure.core/contains_q
+(defn valid-word [word] (= word (string/replace word #"[']" "")))
+
 (defn anagram-map [words]
   (let [key (fn [word] (string/join "" (sort (string/lower-case word))))]
     (reduce (fn [anagrams word] 
@@ -33,7 +36,7 @@
 
 (defn run-on-all-words []
   (with-open [wordlist (io/reader "/usr/share/dict/words")]
-    (print-anagrams (line-seq wordlist))))
+    (print-anagrams (filter valid-word (line-seq wordlist)))))
 
 (run-on-all-words)
 
