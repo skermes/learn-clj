@@ -20,9 +20,11 @@
   (let [longer (fn [gram1 gram2] (if (> (count (first gram1)) (count (first gram2))) gram1 gram2))
         more (fn [gram1 gram2] (if (> (count gram1) (count gram2)) gram1 gram2))]
     (reduce (fn [result agram] (assoc result :longest (longer (result :longest) agram)
-                                             :most (more (result :most) agram)))
+                                             :most (more (result :most) agram)
+                                             :count (+ 1 (result :count))))
             (hash-map :longest [""]
-                      :most [])
+                      :most []
+                      :count 0)
             agrams)))
 
 (defn print-anagrams [words]
@@ -31,9 +33,9 @@
     (do (doseq [anagram anagram-groups]
           (println (string/join " " anagram)))
         (println "----------------------------------")
-        (println "Total anagram tuples:" (count anagram-groups))
+        (println "Total anagram sets:  " (stats :count))
         (println "Longest anagram word:" (stats :longest))
-        (println "Most anagram words:" (stats :most)))))
+        (println "Most anagram words:  " (stats :most)))))
 
 (defn run-on-all-words []
   (with-open [wordlist (io/reader "/usr/share/dict/words")]
