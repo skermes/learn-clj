@@ -30,6 +30,7 @@
         stats (statistics anagram-groups)]
     (do (doseq [anagram anagram-groups]
           (println (string/join " " anagram)))
+        (println "----------------------------------")
         (println "Total anagram tuples:" (count anagram-groups))
         (println "Longest anagram word:" (stats :longest))
         (println "Most anagram words:" (stats :most)))))
